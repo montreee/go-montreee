@@ -13,7 +13,7 @@ func checkJavaVersion(javaCommand string) error {
 
 func main() {
 
-	posibleJavaHomeDirEnvs := []string{"MONTREEE_JVM", "JVM", "JDK", "JAVA_HOME"}
+	posibleJavaHomeDirEnvs := []string{"MONTREEE_JVM", "JVM", "JDK", "JAVA_HOME", "JRE_HOME"}
 
 	javaCommand := "java"
 
