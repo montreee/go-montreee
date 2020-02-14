@@ -1,13 +1,49 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 )
 
+func checkJavaVersion(javaCommand string) error {
+	cmd := exec.Command(javaCommand, "--version")
+	return cmd.Run()
+}
+
 func main() {
+
+	posibleJavaHomeDirEnvs := []string{"MONTREEE_JVM", "JVM", "JDK", "JAVA_HOME"}
+
+	javaCommand := "java"
+
+	for _, env := range posibleJavaHomeDirEnvs {
+
+		dir, isSet := os.LookupEnv(env)
+		if !isSet {
+			continue
+		}
+
+		javaCmdToCkeck := dir + "/java"
+
+		err := checkJavaVersion(javaCmdToCkeck)
+		if err != nil {
+			continue
+		}
+
+		javaCommand = javaCmdToCkeck
+
+		break
+	}
+
+	err := checkJavaVersion(javaCommand)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	args := append([]string{"-cp", "lib/*", "CLI"}, os.Args[1:]...)
-	startJvmCommand := exec.Command("java", args...)
+	startJvmCommand := exec.Command(javaCommand, args...)
 	startJvmCommand.Stdout = os.Stdout
 	startJvmCommand.Stderr = os.Stderr
 	_ = startJvmCommand.Run()
