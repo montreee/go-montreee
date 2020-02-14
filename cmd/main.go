@@ -7,17 +7,80 @@ import (
 	"path/filepath"
 )
 
-func checkJavaVersion(javaCommand string) error {
-	cmd := exec.Command(javaCommand, "--version")
-	return cmd.Run()
+var montreeeDirEnv = "MONTREEE"
+
+var defaultMontreeeDir = "."
+
+var montreeeWorkingDirEnv = "MONTREEE_WORKING_DIR"
+
+var montreeeClasspath = "/lib/*"
+
+var montreeeMainClass = "CLI"
+
+var defaultJavaCmd = "java"
+
+var posibleJavaHomeDirEnvs = []string{
+	"MONTREEE_JAVA",
+	"MONTREEE_JAVA_HOME",
+	"MONTREEE_JRE",
+	"MONTREEE_JRE_HOME",
+	"MONTREEE_JVM",
+	"MONTREEE_JVM_HOME",
+	"MONTREEE_JDK",
+	"MONTREEE_JDK_HOME",
+	"JAVA",
+	"JAVA_HOME",
+	"JRE",
+	"JRE_HOME",
+	"JRE",
+	"JVM_HOME",
+	"JRE",
+	"JDK_HOME",
+}
+
+var posibleJavaExecuteables = []string{
+	"/bin/java",
+	"/jre/bin/java",
 }
 
 func main() {
 
-	posibleJavaHomeDirEnvs := []string{"MONTREEE_JVM", "JVM", "JDK", "JAVA_HOME", "JRE_HOME"}
+	javaCmd := resolveJavaCmd()
 
-	javaCommand := "java"
+	err := checkJavaVersion(javaCmd)
+	if err != nil {
+		printJavaConfigurationNotFound()
+		return
+	}
 
+	montreeeDir := defaultMontreeeDir
+
+	if dir, isSet := os.LookupEnv(montreeeDirEnv); isSet {
+		montreeeDir = dir
+	}
+
+	//todo decide on using a environment variable to add extra vm args
+	args := append([]string{"-cp", montreeeDir + montreeeClasspath, montreeeMainClass}, os.Args[1:]...)
+	montreeeCmd := exec.Command(javaCmd, args...)
+
+	if dir, isSet := os.LookupEnv(montreeeWorkingDirEnv); isSet {
+		montreeeCmd.Dir = dir
+	}
+
+	montreeeCmd.Stdout = os.Stdout
+	montreeeCmd.Stderr = os.Stderr
+	_ = montreeeCmd.Run()
+}
+
+func resolveJavaCmd() string {
+	javaCmd, err := resolveJavaCmdFromEnvironment()
+	if err != nil {
+		javaCmd = defaultJavaCmd
+	}
+	return javaCmd
+}
+
+func resolveJavaCmdFromEnvironment() (string, error) {
 	for _, env := range posibleJavaHomeDirEnvs {
 
 		dir, isSet := os.LookupEnv(env)
@@ -25,27 +88,41 @@ func main() {
 			continue
 		}
 
-		javaCmdToCkeck := filepath.FromSlash(dir + "/bin/java")
+		for _, binDir := range posibleJavaExecuteables {
 
-		err := checkJavaVersion(javaCmdToCkeck)
-		if err != nil {
-			continue
+			javaCmdToCkeck := filepath.FromSlash(dir + binDir)
+
+			err := checkJavaVersion(javaCmdToCkeck)
+			if err != nil {
+				continue
+			}
+
+			return javaCmdToCkeck, nil
 		}
-
-		javaCommand = javaCmdToCkeck
-
-		break
 	}
+	return "", NewErrFailedToResolveJavaCommandFromEnvironment()
+}
 
-	err := checkJavaVersion(javaCommand)
-	if err != nil {
-		fmt.Println(err)
-		return
+type ErrFailedToResolveJavaCommandFromEnvironment struct{}
+
+func NewErrFailedToResolveJavaCommandFromEnvironment() *ErrFailedToResolveJavaCommandFromEnvironment {
+	return &ErrFailedToResolveJavaCommandFromEnvironment{}
+}
+
+func (e ErrFailedToResolveJavaCommandFromEnvironment) Error() string {
+	return "Failed to resolve Java command from environment."
+}
+
+func checkJavaVersion(javaCmd string) error {
+	cmd := exec.Command(javaCmd, "--version")
+	return cmd.Run()
+}
+
+func printJavaConfigurationNotFound() {
+	fmt.Println("Failed to find a valid java installation.")
+	fmt.Println("Try to add java to the path or set one of the following environment variables.")
+	fmt.Println()
+	for _, env := range posibleJavaHomeDirEnvs {
+		fmt.Println(env)
 	}
-
-	args := append([]string{"-cp", "lib/*", "CLI"}, os.Args[1:]...)
-	startJvmCommand := exec.Command(javaCommand, args...)
-	startJvmCommand.Stdout = os.Stdout
-	startJvmCommand.Stderr = os.Stderr
-	_ = startJvmCommand.Run()
 }
