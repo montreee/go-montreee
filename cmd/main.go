@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 func checkJavaVersion(javaCommand string) error {
@@ -24,7 +25,7 @@ func main() {
 			continue
 		}
 
-		javaCmdToCkeck := dir + "/java"
+		javaCmdToCkeck := filepath.FromSlash(dir + "/bin/java")
 
 		err := checkJavaVersion(javaCmdToCkeck)
 		if err != nil {
