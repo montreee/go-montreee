@@ -32,9 +32,9 @@ var posibleJavaHomeDirEnvs = []string{
 	"JAVA_HOME",
 	"JRE",
 	"JRE_HOME",
-	"JRE",
+	"JVE",
 	"JVM_HOME",
-	"JRE",
+	"JDE",
 	"JDK_HOME",
 }
 
