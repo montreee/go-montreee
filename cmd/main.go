@@ -71,10 +71,7 @@ func main() {
 	montreeeCmd.Stdout = os.Stdout
 	montreeeCmd.Stderr = os.Stderr
 
-	err = montreeeCmd.Run()
-	if err != nil {
-		panic(err)
-	}
+	_ = montreeeCmd.Run()
 }
 
 func resolveJavaCmd() string {
