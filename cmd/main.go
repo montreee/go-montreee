@@ -60,7 +60,7 @@ func main() {
 		montreeeDir = dir
 	}
 
-	// todo decide on using a environment variable to add extra vm args
+	//todo decide on using a environment variable to add extra vm args
 	args := append([]string{"-cp", montreeeDir + montreeeClasspath, montreeeMainClass}, os.Args[1:]...)
 	montreeeCmd := exec.Command(javaCmd, args...)
 
